@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三模态情绪识别系统 | Multi-Modal Emotion Recognition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #8892b0;
+            font-size: 1.1rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+        }
+
+        .face-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .voice-icon { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .physio-icon { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .fusion-icon { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .card-status {
+            margin-left: auto;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-ok { background: rgba(67, 233, 123, 0.2); color: #43e97b; }
+        .status-error { background: rgba(245, 87, 108, 0.2); color: #f5576c; }
+        .status-init { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+
+        .emotion-display {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .emotion-emoji {
+            font-size: 5rem;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .emotion-text {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .emotion-detail {
+            color: #8892b0;
+            font-size: 0.95rem;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            color: #666;
+            text-align: center;
+        }
+
+        .physio-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .physio-item {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .physio-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4facfe;
+            margin-bottom: 5px;
+        }
+
+        .physio-label {
+            font-size: 0.85rem;
+            color: #8892b0;
+        }
+
+        .physio-unit {
+            font-size: 0.9rem;
+            color: #667eea;
+        }
+
+        .fusion-result {
+            background: linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%);
+            border: 2px solid rgba(67, 233, 123, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .fusion-title {
+            font-size: 1.2rem;
+            color: #8892b0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .fusion-emotion {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .weights-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .weight-item {
+            text-align: center;
+        }
+
+        .weight-bar {
+            width: 80px;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .weight-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .voice-text {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .logs-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .log-time { color: #667eea; margin-right: 10px; }
+        .log-info { color: #43e97b; }
+        .log-warn { color: #ffc107; }
+        .log-error { color: #f5576c; }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .emotion-发怒 { color: #ff6b6b; }
+        .emotion-厌恶 { color: #95e1d3; }
+        .emotion-恐惧 { color: #f38181; }
+        .emotion-开心 { color: #ffd93d; }
+        .emotion-伤心 { color: #6c5ce7; }
+        .emotion-惊讶 { color: #74b9ff; }
+        .emotion-中性 { color: #a0a0a0; }
+        .emotion-蔑视 { color: #fd79a8; }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .connection-online {
+            background: rgba(67, 233, 123, 0.2);
+            color: #43e97b;
+        }
+
+        .connection-offline {
+            background: rgba(245, 87, 108, 0.2);
+            color: #f5576c;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .dashboard { grid-template-columns: 1fr; }
+            .fusion-emotion { font-size: 2.5rem; }
+            .controls {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                justify-content: center;
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="connection-status" class="connection-status connection-offline">
+        🔴 离线
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>🧠 三模态情绪识别系统</h1>
+            <p class="subtitle">面部 · 语音 · 生理信号 | 实时融合分析</p>
+        </header>
+
+        <div class="dashboard">
+            <!-- 人脸情绪卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon face-icon">😊</div>
+                    <div class="card-title">人脸情绪识别</div>
+                    <div class="card-status status-init" id="face-status">初始化中</div>
+                </div>
+                <div class="video-container">
+                    <img id="face-frame" src="" alt="摄像头画面" style="display: none;">
+                    <div id="face-placeholder" class="video-placeholder">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">📷</div>
+                        <div>等待摄像头...</div>
+                    </div>
+                </div>
+                <div class="emotion-display">
+                    <div class="emotion-text emotion-中性" id="face-emotion">初始化中</div>
+                    <div class="emotion-detail">基于 CNN 深度学习模型</div>
+                </div>
+            </div>
+
+            <!-- 语音情绪卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon voice-icon">🎙️</div>
+                    <div class="card-title">语音情绪识别</div>
+                    <div class="card-status status-init" id="voice-status">等待输入</div>
+                </div>
+                <div class="voice-text" id="voice-text">
+                    <span style="color: #666;">等待语音输入...</span>
+                </div>
+                <div class="emotion-display">
+                    <div class="emotion-text emotion-中性" id="voice-emotion">中性</div>
+                    <div class="emotion-detail" id="voice-lang">语言: -</div>
+                </div>
+            </div>
+
+            <!-- 生理信号卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon physio-icon">💓</div>
+                    <div class="card-title">生理信号监测</div>
+                    <div class="card-status status-init" id="physio-status">初始化中</div>
+                </div>
+                <div class="physio-grid">
+                    <div class="physio-item">
+                        <div class="physio-value" id="heart-rate">--</div>
+                        <div class="physio-label">心率</div>
+                        <div class="physio-unit">bpm</div>
+                    </div>
+                    <div class="physio-item">
+                        <div class="physio-value" id="spo2">--</div>
+                        <div class="physio-label">血氧</div>
+                        <div class="physio-unit">%</div>
+                    </div>
+                    <div class="physio-item">
+                        <div class="physio-value" id="gsr">--</div>
+                        <div class="physio-label">GSR</div>
+                        <div class="physio-unit">V</div>
+                    </div>
+                    <div class="physio-item">
+                        <div class="physio-value" id="acc">--</div>
+                        <div class="physio-label">加速度</div>
+                        <div class="physio-unit">g</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; font-size: 0.85rem; color: #8892b0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>陀螺仪 X:</span> <span id="gyro-x">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>陀螺仪 Y:</span> <span id="gyro-y">--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>陀螺仪 Z:</span> <span id="gyro-z">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 融合结果卡片 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <div class="card-icon fusion-icon">🎯</div>
+                    <div class="card-title">多模态融合结果</div>
+                    <div class="card-status status-ok">实时计算</div>
+                </div>
+                <div class="fusion-result">
+                    <div class="fusion-title">最终识别情绪</div>
+                    <div class="fusion-emotion" id="final-emotion">中性</div>
+                    <div style="color: #8892b0; margin-bottom: 20px;">
+                        基于动态权重融合算法 | 生理65% · 人脸25% · 语音10%
+                    </div>
+                    <div class="weights-info">
+                        <div class="weight-item">
+                            <div class="weight-bar">
+                                <div class="weight-fill" style="width: 65%; background: linear-gradient(90deg, #4facfe, #00f2fe);"></div>
+                            </div>
+                            <div style="font-size: 0.85rem; color: #4facfe;">生理信号</div>
+                            <div style="font-size: 0.75rem; color: #666;">65%</div>
+                        </div>
+                        <div class="weight-item">
+                            <div class="weight-bar">
+                                <div class="weight-fill" style="width: 25%; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
+                            </div>
+                            <div style="font-size: 0.85rem; color: #667eea;">人脸情绪</div>
+                            <div style="font-size: 0.75rem; color: #666;">25%</div>
+                        </div>
+                        <div class="weight-item">
+                            <div class="weight-bar">
+                                <div class="weight-fill" style="width: 10%; background: linear-gradient(90deg, #f093fb, #f5576c);"></div>
+                            </div>
+                            <div style="font-size: 0.85rem; color: #f093fb;">语音情绪</div>
+                            <div style="font-size: 0.75rem; color: #666;">10%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统日志 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <div class="card-icon" style="background: #2d2d44;">📝</div>
+                    <div class="card-title">系统日志</div>
+                </div>
+                <div class="logs-container" id="logs">
+                    <div class="log-entry">
+                        <span class="log-time">--:--:--</span>
+                        <span class="log-info">等待服务器连接...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-primary" onclick="refreshData()">
+            <span>🔄</span> 刷新数据
+        </button>
+        <button class="btn btn-danger" onclick="stopSystem()">
+            <span>⏹️</span> 停止系统
+        </button>
+    </div>
+
+    <script>
+        // API基础URL - 自动检测
+        const API_BASE = window.location.origin;
+        
+        const emotionEmojis = {
+            '发怒': '😡',
+            '厌恶': '🤢',
+            '恐惧': '😨',
+            '开心': '😄',
+            '伤心': '😢',
+            '惊讶': '😲',
+            '中性': '😐',
+            '蔑视': '😏',
+            '初始化中': '⏳',
+            '未检测到人脸': '👤',
+            '摄像头异常': '⚠️',
+            '检测错误': '⚠️'
+        };
+
+        const emotionClasses = {
+            '发怒': 'emotion-发怒',
+            '厌恶': 'emotion-厌恶',
+            '恐惧': 'emotion-恐惧',
+            '开心': 'emotion-开心',
+            '伤心': 'emotion-伤心',
+            '惊讶': 'emotion-惊讶',
+            '中性': 'emotion-中性',
+            '蔑视': 'emotion-蔑视'
+        };
+
+        let isConnected = false;
+        let refreshInterval;
+        let logsInterval;
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/status`);
+                if (!response.ok) throw new Error('HTTP error');
+                const data = await response.json();
+                updateUI(data);
+                updateConnectionStatus(true);
+            } catch (error) {
+                console.error('获取状态失败:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const statusEl = document.getElementById('connection-status');
+            if (connected) {
+                statusEl.textContent = '🟢 在线';
+                statusEl.className = 'connection-status connection-online';
+            } else {
+                statusEl.textContent = '🔴 离线';
+                statusEl.className = 'connection-status connection-offline';
+            }
+        }
+
+        function updateUI(data) {
+            // 更新人脸
+            const faceEmotion = data.face_emotion || '初始化中';
+            const faceEmoji = emotionEmojis[faceEmotion] || '';
+            document.getElementById('face-emotion').textContent = faceEmotion + (faceEmoji ? ' ' + faceEmoji : '');
+            document.getElementById('face-emotion').className = 'emotion-text ' + (emotionClasses[faceEmotion] || 'emotion-中性');
+            
+            const faceStatus = document.getElementById('face-status');
+            faceStatus.textContent = data.face_status === 'ok' ? '运行中' : data.face_status;
+            faceStatus.className = 'card-status ' + (data.face_status === 'ok' ? 'status-ok' : (data.face_status === 'camera_error' ? 'status-error' : 'status-init'));
+            
+            if (data.face_frame) {
+                const img = document.getElementById('face-frame');
+                img.src = data.face_frame;
+                img.style.display = 'block';
+                document.getElementById('face-placeholder').style.display = 'none';
+            }
+
+            // 更新语音
+            if (data.voice_text) {
+                document.getElementById('voice-text').textContent = data.voice_text;
+                document.getElementById('voice-text').style.color = '#fff';
+            }
+            
+            const voiceEmotion = data.voice_emotion || '中性';
+            const voiceEmoji = emotionEmojis[voiceEmotion] || '';
+            document.getElementById('voice-emotion').textContent = voiceEmotion + (voiceEmoji ? ' ' + voiceEmoji : '');
+            document.getElementById('voice-emotion').className = 'emotion-text ' + (emotionClasses[voiceEmotion] || 'emotion-中性');
+            document.getElementById('voice-lang').textContent = '语言: ' + (data.voice_language || '-');
+            
+            const voiceStatus = document.getElementById('voice-status');
+            voiceStatus.textContent = data.voice_text ? '识别完成' : '等待输入';
+            voiceStatus.className = 'card-status ' + (data.voice_text ? 'status-ok' : 'status-init');
+
+            // 更新生理数据
+            const physio = data.physio_data || {};
+            document.getElementById('heart-rate').textContent = physio.heart_rate > 0 ? physio.heart_rate : '--';
+            document.getElementById('spo2').textContent = physio.spo2 > 0 ? physio.spo2 : '--';
+            document.getElementById('gsr').textContent = physio.gsr_volt > 0 ? physio.gsr_volt : '--';
+            
+            const acc = (physio.acc_x !== undefined && physio.acc_x !== 0) ? 
+                Math.sqrt(physio.acc_x**2 + physio.acc_y**2 + physio.acc_z**2).toFixed(2) : '--';
+            document.getElementById('acc').textContent = acc;
+            
+            document.getElementById('gyro-x').textContent = (physio.gyro_x !== undefined && physio.gyro_x !== 0 ? physio.gyro_x : '--') + ' °/s';
+            document.getElementById('gyro-y').textContent = (physio.gyro_y !== undefined && physio.gyro_y !== 0 ? physio.gyro_y : '--') + ' °/s';
+            document.getElementById('gyro-z').textContent = (physio.gyro_z !== undefined && physio.gyro_z !== 0 ? physio.gyro_z : '--') + ' °/s';
+            
+            const physioStatus = document.getElementById('physio-status');
+            physioStatus.textContent = data.physio_status === 'ok' ? '监测中' : '初始化';
+            physioStatus.className = 'card-status ' + (data.physio_status === 'ok' ? 'status-ok' : 'status-init');
+
+            // 更新融合结果
+            const finalEmotion = data.final_emotion || '中性';
+            const finalEmoji = emotionEmojis[finalEmotion] || '';
+            document.getElementById('final-emotion').textContent = finalEmotion + (finalEmoji ? ' ' + finalEmoji : '');
+        }
+
+        async function fetchLogs() {
+            if (!isConnected) return;
+            try {
+                const response = await fetch(`${API_BASE}/api/logs`);
+                if (!response.ok) throw new Error('HTTP error');
+                const logs = await response.json();
+                updateLogs(logs);
+            } catch (error) {
+                console.error('获取日志失败:', error);
+            }
+        }
+
+        function updateLogs(logs) {
+            const container = document.getElementById('logs');
+            if (logs.length === 0) return;
+            
+            container.innerHTML = logs.slice(-50).map(log => {
+                const date = new Date(log.time);
+                const timeStr = date.toLocaleTimeString();
+                const levelClass = 'log-' + log.level.toLowerCase();
+                return `
+                    <div class="log-entry">
+                        <span class="log-time">${timeStr}</span>
+                        <span class="${levelClass}">[${log.level}] ${log.message}</span>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function refreshData() {
+            await fetchStatus();
+            await fetchLogs();
+        }
+
+        async function stopSystem() {
+            if (!confirm('确定要停止系统吗？')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/control`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'stop' })
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (error) {
+                alert('停止系统失败: ' + error.message);
+            }
+        }
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(fetchStatus, 100);   // 100ms刷新状态
+            logsInterval = setInterval(fetchLogs, 1000);       // 1秒刷新日志
+        }
+
+        function stopAutoRefresh() {
+            clearInterval(refreshInterval);
+            clearInterval(logsInterval);
+        }
+
+        // 页面加载完成后启动
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchStatus();
+            fetchLogs();
+            startAutoRefresh();
+        });
+
+        // 页面关闭时停止
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>
