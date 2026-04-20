@@ -1,6 +1,27 @@
+# Python
 __pycache__/
 *.pyc
+
+# Model files
+*.pt
+*.pth
+*.h5
+
+# Audio & Data
+*.mp3
+*.m4a
+*.wav
+*.DAT
+
+# Executables
+*.exe
+
+# System files
+.DS_Store
+
+# IDE
 .idea/
 .vscode/
-*.pt
-*.h5
+
+# Logs
+*.log
