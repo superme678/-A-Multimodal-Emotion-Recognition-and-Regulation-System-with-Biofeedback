@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-05-04T09:07:54.475169+00:00",
+    "hostname": "LAPTOP-0R96EHEH",
+    "python_version": "3.12.7"
+  },
+  "physio": {
+    "modality": "physio_serial",
+    "protocol": "19-byte FA..AF checksum sum(frame[1:17])%256",
+    "golden_frame_count": 200,
+    "golden_stream_decode_exact_match": true,
+    "golden_per_frame_match_rate": 1.0,
+    "sticky_packet_frames_expected": 50,
+    "sticky_packet_frames_parsed": 50,
+    "sticky_packet_full_recovery": true,
+    "random_trials": 5,
+    "random_bytes_per_trial": 20000,
+    "random_noise_total_spurious_frames": 0,
+    "random_noise_spurious_per_kb": 0.0,
+    "prng_seed": 42
+  },
+  "fusion": {
+    "modality": "fusion_vote",
+    "rule_case_count": 3,
+    "rule_case_pass": 3,
+    "rule_case_pass_rate": 1.0,
+    "cases": [
+      {
+        "case_id": "physio_arousal_face_voice_happy",
+        "expected": "开心",
+        "got": "开心",
+        "pass": true,
+        "note": "生理推断发怒(6票)但面+声同为开心(各7票)，开心总票多"
+      },
+      {
+        "case_id": "face_missing_voice_dominant",
+        "expected": "恐惧",
+        "got": "恐惧",
+        "pass": true,
+        "note": "无人脸时降低语音权重，但生理恐惧仍参与"
+      },
+      {
+        "case_id": "physio_invalid_weights_face",
+        "expected": "伤心",
+        "got": "伤心",
+        "pass": true,
+        "note": "生理无效时提高面部权重，伤心应胜出"
+      }
+    ],
+    "ablation_neutral_neutral": {
+      "face": "中性",
+      "voice": "中性",
+      "fuse_physio_valid": "中性",
+      "fuse_physio_invalid": "中性"
+    }
+  },
+  "asr_tags": {
+    "modality": "asr_tag_parse",
+    "sample_count": 5,
+    "pass_count": 5,
+    "pass_rate": 1.0,
+    "samples": [
+      {
+        "raw": "<|zh|><|HAPPY|>你好世界",
+        "text": "你好世界",
+        "lang": "中文",
+        "emo": "开心",
+        "pass": true
+      },
+      {
+        "raw": "<|en|><|SAD|>hello",
+        "text": "hello",
+        "lang": "英文",
+        "emo": "伤心",
+        "pass": true
+      },
+      {
+        "raw": "<|yue|><|ANGRY|>测试<|Speech|>",
+        "text": "测试",
+        "lang": "粤语",
+        "emo": "发怒",
+        "pass": true
+      },
+      {
+        "raw": "plain no tags",
+        "text": "plain no tags",
+        "lang": "",
+        "emo": "中性",
+        "pass": true
+      },
+      {
+        "raw": "<|NEUTRAL|><|zh|>只有中性",
+        "text": "只有中性",
+        "lang": "中文",
+        "emo": "中性",
+        "pass": true
+      }
+    ]
+  },
+  "face": {
+    "skipped": true,
+    "skipped_reason": "exception:ModuleNotFoundError:No module named 'cv2'"
+  }
+}

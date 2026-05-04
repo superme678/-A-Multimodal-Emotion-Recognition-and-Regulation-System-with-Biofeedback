@@ -12,6 +12,7 @@ import time
 import traceback
 
 import cv2
+from evaluation.asr_clean import clean_asr_text
 from funasr import AutoModel
 import numpy as np
 import sounddevice as sd
@@ -72,34 +73,6 @@ def resolve_voice_model_path(model_path: str) -> str:
         return str(junction_path)
     except Exception:
         return to_windows_short_path(model_path)
-
-
-def clean_asr_text(raw_text: str) -> tuple[str, str]:
-    language = ""
-    if "<|zh|>" in raw_text:
-        language = "中文"
-    elif "<|en|>" in raw_text:
-        language = "英文"
-    elif "<|ja|>" in raw_text:
-        language = "日文"
-    elif "<|ko|>" in raw_text:
-        language = "韩文"
-    elif "<|yue|>" in raw_text:
-        language = "粤语"
-
-    tags_to_remove = [
-        "<|zh|>", "<|en|>", "<|ja|>", "<|ko|>", "<|yue|>",
-        "<|HAPPY|>", "<|SAD|>", "<|ANGRY|>", "<|FEARFUL|>", "<|NEUTRAL|>",
-        "<|DISGUSTED|>", "<|SURPRISED|>",
-        "<|Speech|>", "<|Laughter|>", "<|Applause|>", "<|Cough|>",
-        "<|Sneeze|>", "<|Cry|>", "<|Music|>",
-        "<|/zh|>", "<|/en|>", "<|/ja|>", "<|/ko|>", "<|/yue|>",
-        "<|woitn|>", "<|withitn|>",
-    ]
-    text = raw_text
-    for tag in tags_to_remove:
-        text = text.replace(tag, "")
-    return text.strip(), language
 
 
 def create_face_model():
@@ -301,7 +274,7 @@ def main():
         begin = time.time()
         out = asr_model.generate(input=samples, cache={}, language="auto", use_itn=False)
         elapsed = time.time() - begin
-        text, language = clean_asr_text(out[0].get("text", ""))
+        text, language, _voice_emo = clean_asr_text(out[0].get("text", ""))
         return text, language, elapsed
 
     def audio_callback(indata, frames, time_info, status):

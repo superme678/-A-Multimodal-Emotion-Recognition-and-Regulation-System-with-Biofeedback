@@ -2,7 +2,7 @@ import argparse
 import ctypes
 import os
 from pathlib import Path
-from collections import deque, Counter
+from collections import deque
 from queue import Empty, Queue
 import subprocess
 import sys
@@ -21,6 +21,9 @@ from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, Input, MaxP
 from tensorflow.keras.models import Model
 from flask import Flask, request, Response
 from flask_cors import CORS
+
+from evaluation.asr_clean import clean_asr_text
+from multimodal_fusion import fuse_multi_emotion
 
 # 尝试导入blaze_detect，如果失败则使用备用方案
 try:
@@ -165,50 +168,6 @@ def resolve_voice_model_path(model_path: str) -> str:
         return to_windows_short_path(model_path)
 
 
-def clean_asr_text(raw_text: str) -> tuple[str, str, str]:
-    language = ""
-    voice_emotion = "中性"
-    emotion_map = {
-        "<|HAPPY|>": "开心", "<|SAD|>": "伤心", "<|ANGRY|>": "发怒",
-        "<|FEARFUL|>": "恐惧", "<|NEUTRAL|>": "中性", "<|DISGUSTED|>": "厌恶",
-        "<|SURPRISED|>": "惊讶", "<|EMO_UNKNOWN|>": "中性"
-    }
-
-    if "<|zh|>" in raw_text:
-        language = "中文"
-    elif "<|en|>" in raw_text:
-        language = "英文"
-    elif "<|ja|>" in raw_text:
-        language = "日文"
-    elif "<|ko|>" in raw_text:
-        language = "韩文"
-    elif "<|yue|>" in raw_text:
-        language = "粤语"
-
-    found_emotion = False
-    for tag, emo in emotion_map.items():
-        if tag in raw_text:
-            voice_emotion = emo
-            found_emotion = True
-            break
-    if not found_emotion:
-        voice_emotion = "中性"
-
-    tags_to_remove = [
-        "<|zh|>", "<|en|>", "<|ja|>", "<|ko|>", "<|yue|>",
-        "<|HAPPY|>", "<|SAD|>", "<|ANGRY|>", "<|FEARFUL|>", "<|NEUTRAL|>",
-        "<|DISGUSTED|>", "<|SURPRISED|>", "<|EMO_UNKNOWN|>",
-        "<|Speech|>", "<|Laughter|>", "<|Applause|>", "<|Cough|>",
-        "<|Sneeze|>", "<|Cry|>", "<|Music|>",
-        "<|/zh|>", "<|/en|>", "<|/ja|>", "<|/ko|>", "<|/yue|>",
-        "<|woitn|>", "<|withitn|>",
-    ]
-    text = raw_text
-    for tag in tags_to_remove:
-        text = text.replace(tag, "")
-    return text.strip(), language, voice_emotion
-
-
 def create_face_model():
     input_layer = Input(shape=(48, 48, 1))
     x = Conv2D(32, (1, 1), strides=1, padding="same", activation="relu")(input_layer)
@@ -309,56 +268,6 @@ def parse_valid_frames(buffer):
         i += FIXED_FRAME_LEN
 
     return valid_frames, buffer[i:]
-
-
-# ===================== 情绪融合算法 =====================
-def fuse_multi_emotion(face_emo: str, voice_emo: str, physio: dict) -> str:
-    hr = physio.get("heart_rate", 0)
-    gsr = physio.get("gsr_volt", 0.0)
-    spo2 = physio.get("spo2", 0)
-
-    physio_emo = "中性"
-    if hr > 100 and gsr > 1.0:
-        physio_emo = "发怒"
-    elif hr > 90 and gsr > 0.8:
-        physio_emo = "恐惧"
-    elif 80 <= hr <= 90 and 0.5 < gsr <= 0.8:
-        physio_emo = "开心"
-    elif hr < 70 and gsr <= 0.5:
-        physio_emo = "中性"
-    elif 60 <= hr < 75 and gsr <= 0.3:
-        physio_emo = "伤心"
-
-    physio_weight = 6
-    face_weight = 7
-    voice_weight = 7
-
-    if hr <= 0 or gsr <= 0 or spo2 <= 0:
-        physio_weight = 4
-        face_weight = 12
-        voice_weight = 4
-
-    if face_emo in ["未检测到人脸", "初始化中", "摄像头异常"]:
-        face_weight = 0
-        total = physio_weight + voice_weight
-        if total > 0:
-            physio_weight = int(physio_weight / total * 18)
-            voice_weight = 2
-
-    if voice_emo == "NEUTRAL" or voice_emo == "中性":
-        voice_weight = 1
-
-    physio_weight = max(physio_weight, 1)
-    face_weight = max(face_weight, 0)
-    voice_weight = max(voice_weight, 1)
-
-    vote = Counter()
-    vote.update([physio_emo] * physio_weight)
-    if face_weight > 0:
-        vote.update([face_emo] * face_weight)
-    vote.update([voice_emo] * voice_weight)
-
-    return vote.most_common(1)[0][0] if vote else "中性"
 
 
 # ===================== 人脸检测线程 =====================
