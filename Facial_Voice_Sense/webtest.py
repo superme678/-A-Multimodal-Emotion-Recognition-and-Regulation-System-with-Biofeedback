@@ -39,7 +39,7 @@ SENSE_VOICE_DIR = BASE_DIR / "SenseVoiceSmall"
 SAMPLE_RATE = 16000
 
 # ===================== 生理信号配置 =====================
-DAT_FILE = r"D:\AI_project\Facial-and-Speech-Dual-Modal-Emotion-Sensing-and-Regulation-System-master\Facial_Voice_Sense\sscom\ReceivedTofile-COM3-2026_4_20_22-19-30.DAT"
+DAT_FILE = r"D:\AI_project\Facial-and-Speech-Dual-Modal-Emotion-Sensing-and-Regulation-System-master\Facial_Voice_Sense\sscom\ReceivedTofile-COM3-2026_5_3_14-28-49.DAT"
 SAVE_TXT = r"D:\AI_project\Facial-and-Speech-Dual-Modal-Emotion-Sensing-and-Regulation-System-master\Facial_Voice_Sense\sscom\手环实时解析结果.txt"
 FIXED_FRAME_LEN = 19
 FRAME_HEAD = 0xFA
@@ -329,9 +329,9 @@ def fuse_multi_emotion(face_emo: str, voice_emo: str, physio: dict) -> str:
     elif 60 <= hr < 75 and gsr <= 0.3:
         physio_emo = "伤心"
 
-    physio_weight = 9
-    face_weight = 5
-    voice_weight = 6
+    physio_weight = 6
+    face_weight = 7
+    voice_weight = 7
 
     if hr <= 0 or gsr <= 0 or spo2 <= 0:
         physio_weight = 4
@@ -658,7 +658,7 @@ def voice_loop(mic_device=None):
 # ===================== Flask API 路由 =====================
 @app.route('/')
 def index():
-    return app.send_static_file('index.html')
+    return app.send_static_file('test2.html')
 
 
 @app.route('/api/status')

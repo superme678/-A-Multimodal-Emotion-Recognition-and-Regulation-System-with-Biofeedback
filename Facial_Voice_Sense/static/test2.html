@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多模态情绪识别与调节系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif, 'Microsoft YaHei', 'PingFang SC';
+            background: #ffffff;
+            color: #1e293b;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .wave-bar {
+            width: 4px; background: #6366f1; margin: 0 2px;
+            animation: wave 1.2s ease-in-out infinite;
+        }
+        @keyframes wave { 0%, 100% { height: 10px; } 50% { height: 40px; } }
+    </style>
+</head>
+<body class="flex flex-col p-4">
+
+    <header class="h-14 flex justify-between items-center px-6 mb-4 border-b border-gray-200" style="height: 70px; background-color: #1e293b;">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 bg-indigo-600 shadow-[0_0_12px_#6366f1]"></div>
+            <h1 class="text-2xl font-black tracking-widest text-slate-800" style="color: #ffffff;">多模态情绪识别 <span class="text-indigo-600" style="color: #a5b4fc;">系统</span></h1>
+            <span class="px-2 py-0.5 border border-gray-300 text-sm text-slate-500">融合模式运行中</span>
+        </div>
+        <div class="flex gap-6 items-center text-sm font-mono">
+            <div class="flex flex-col items-end">
+                <span class="text-slate-400">神经延迟</span>
+                <span class="text-green-600">24ms (SenseFaceSmall)</span>
+            </div>
+            <div class="flex flex-col items-end border-l border-gray-200 pl-6">
+                <span class="text-slate-400">生物同步</span>
+                <span class="text-indigo-600 text-sm">PPG/GSR 已连接</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-grow grid grid-cols-12 gap-6 overflow-hidden">
+
+        <div class="col-span-9 flex flex-col gap-6 overflow-y-auto no-scrollbar pb-6">
+
+            <div class="grid grid-cols-3 gap-6">
+                <div class="glass-card p-4 h-80">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-base font-bold text-slate-500">视觉神经流</span>
+                        <span class="text-sm bg-indigo-100 text-indigo-600 px-2 py-0.5">人脸检测中</span>
+                    </div>
+                    <div class="relative h-64 bg-gray-900">
+                        <video id="videoElement" autoplay playsinline class="w-full h-full object-cover opacity-80"></video>
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div class="w-32 h-40 border-2 border-cyan-400/40 animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 h-80 flex flex-col">
+                    <span class="text-base font-bold text-slate-500 mb-3 block">声学分析 (SenseVoice)</span>
+                    <div class="flex-grow flex flex-col justify-center items-center bg-gray-100">
+                        <div class="flex items-end h-20 mb-4">
+                            <div class="wave-bar" style="animation-delay: 0.1s; background: #6366f1"></div>
+                            <div class="wave-bar" style="animation-delay: 0.3s; background: #818cf8"></div>
+                            <div class="wave-bar" style="animation-delay: 0.2s; background: #22d3ee"></div>
+                            <div class="wave-bar" style="animation-delay: 0.4s; background: #6366f1"></div>
+                            <div class="wave-bar" style="animation-delay: 0.1s; background: #22d3ee"></div>
+                        </div>
+                        <p class="text-base text-indigo-600 font-mono italic">"语音情感值: 0.82 稳定"</p>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 h-80">
+                    <span class="text-base font-bold text-slate-500 mb-3 block">生物特征融合 (可穿戴设备)</span>
+                    <div class="h-64">
+                        <canvas id="bioChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card flex-grow p-4 flex items-center gap-6 relative overflow-hidden border border-gray-200" style="background-color: #fafafa; color: #202b3c;">
+
+                <div class="z-10 flex-shrink-0 text-center" style="flex-direction: column; height: 300px; width: 200px; margin-left: 100px;">
+                    <div class="text-indigo-600 text-lg font-bold mb-2 tracking-wider">情绪识别结果</div>
+                    <div class="text-9xl filter drop-shadow-lg" style="height: 120px;">😌</div>
+                    <div class="mt-4">
+                        <h2 class="text-6xl font-black text-slate-800 tracking-tight">平静</h2>
+                        <div class="mt-3 flex justify-center gap-3">
+                            <span class="px-3 py-1 bg-green-100 border border-green-200 text-base text-green-600">真实度: 94%</span>
+                            <span class="px-3 py-1 bg-gray-100 border border-gray-200 text-base text-slate-600">Transformer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-grow z-10 h-[300px]">
+                    <canvas id="emotionRadar" width="480" height="320" style="width: 300px;"></canvas>
+                </div>
+
+                
+            </div>
+        </div>
+
+        <aside class="col-span-3 flex flex-col gap-4">
+            <div class="glass-card flex flex-col h-full p-5 border border-gray-200">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="p-2.5 bg-indigo-600 text-white shadow-lg">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h2 class="font-bold text-xl tracking-tight text-slate-800">调节干预</h2>
+                </div>
+
+                <div class="flex-grow overflow-y-auto no-scrollbar space-y-4">
+                    <div id="physioCheckCard" class="p-4 bg-gray-50 border-l-4 border-cyan-500 hover:bg-gray-100 transition-all cursor-help">
+                        <span class="text-xs text-cyan-600 font-bold">生理对齐校验</span>
+                        <h3 id="physioCheckTitle" class="text-sm font-bold mt-1 text-slate-800">校验中...</h3>
+                        <p id="physioCheckDesc" class="text-sm text-slate-500 mt-2">正在获取生理数据...</p>
+                    </div>
+
+                    <div id="immersionCard" class="p-4 bg-gray-50 border-l-4 border-indigo-500 hover:bg-gray-100 transition-all cursor-pointer group">
+                        <span class="text-xs text-indigo-600 font-bold">沉浸式调节</span>
+                        <h3 class="text-sm font-bold mt-1 text-slate-800">心流状态引导</h3>
+                        <p class="text-sm text-slate-500 mt-2">心率变异性（HRV）显示处于高创造力区间。建议开启"深空环境音"。</p>
+                        <button class="mt-4 w-full py-2 bg-indigo-600 text-sm font-bold text-white transition group-hover:scale-[1.02]">启动调节</button>
+                    </div>
+
+                    <div class="pt-6">
+                        <span class="text-xs text-slate-500 font-bold mb-3 block">效价趋势 (最近10分钟)</span>
+                        <div class="h-24">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                    <button class="w-full py-3.5 bg-indigo-600 text-sm font-bold text-white transition hover:bg-indigo-700">
+                        导出多模态分析报告
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        const emotionEmojis = {
+            '平静': '😌', '中性': '😐', '开心': '😄', '悲伤': '😢',
+            '伤心': '😢', '愤怒': '😡', '惊讶': '😲', '恐惧': '😨', 
+            '厌恶': '🤢', '蔑视': '😏', '初始化中': '⏳', 
+            '未检测到人脸': '👤', '摄像头异常': '⚠️', '检测错误': '⚠️'
+        };
+
+        const emotionValues = {
+            '开心': 0.9, '中性': 0.5, '平静': 0.45, '惊讶': 0.6,
+            '伤心': 0.2, '悲伤': 0.2, '愤怒': 0.1, '恐惧': 0.15,
+            '厌恶': 0.1, '蔑视': 0.3
+        };
+
+        let radarChart, trendChart, bioChart;
+        let emotionHistory = Array(10).fill(0.5);
+        let refreshInterval;
+
+        // 初始化图表
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            startAutoRefresh();
+        });
+
+        function initCharts() {
+            // 生理信号图表
+            const ctx1 = document.getElementById('bioChart')?.getContext('2d');
+            if (ctx1) {
+                bioChart = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['心率', '血氧', 'GSR'],
+                        datasets: [{
+                            label: '生理信号',
+                            data: [72, 98, 0.45],
+                            backgroundColor: ['#6366f1', '#22d3ee', '#10b981']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            // 情绪雷达图
+            const ctx2 = document.getElementById('emotionRadar')?.getContext('2d');
+            if (ctx2) {
+                radarChart = new Chart(ctx2, {
+                    type: 'radar',
+                    data: {
+                        labels: ['开心', '悲伤', '愤怒', '恐惧', '惊讶', '平静'],
+                        datasets: [{
+                            label: '情绪分布',
+                            data: [0.2, 0.1, 0.15, 0.05, 0.1, 0.4],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.2)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                pointLabels: {
+                                    font: {
+                                        size: 16
+                                    }
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 14
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    font: {
+                                        size: 16
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 效价趋势图
+            const ctx4 = document.getElementById('trendChart')?.getContext('2d');
+            if (ctx4) {
+                trendChart = new Chart(ctx4, {
+                    type: 'line',
+                    data: {
+                        labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                        datasets: [{
+                            label: '效价',
+                            data: emotionHistory,
+                            borderColor: '#6366f1',
+                            tension: 0.4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        }
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/status`);
+                if (!response.ok) throw new Error('HTTP error');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('获取状态失败:', error);
+            }
+        }
+
+        function updateUI(data) {
+            // 更新人脸视频 - 注意：video元素无法直接显示base64图片，使用img替代
+            const videoElement = document.getElementById('videoElement');
+            if (videoElement && data.face_frame) {
+                videoElement.style.backgroundImage = `url(${data.face_frame})`;
+                videoElement.style.backgroundSize = 'cover';
+                videoElement.style.backgroundPosition = 'center';
+            }
+
+            // 更新情绪识别结果
+            const finalEmotion = data.final_emotion || data.face_emotion || '中性';
+            const finalEmoji = emotionEmojis[finalEmotion] || '😐';
+            
+            // 更新表情
+            const emojiElement = document.querySelector('.text-9xl.filter.drop-shadow-lg');
+            if (emojiElement) {
+                emojiElement.textContent = finalEmoji;
+            }
+            
+            // 更新情绪标题
+            const titleElement = document.querySelector('.text-6xl.font-black.text-slate-800');
+            if (titleElement) {
+                titleElement.textContent = finalEmotion;
+            }
+
+            // 更新语音文本
+            const voiceTextElement = document.querySelector('.text-indigo-600.font-mono.italic');
+            if (voiceTextElement && data.voice_text) {
+                voiceTextElement.textContent = `"${data.voice_text}"`;
+            } else if (voiceTextElement) {
+                const voiceEmotion = data.voice_emotion || '中性';
+                voiceTextElement.textContent = `"语音情感: ${voiceEmotion}"`;
+            }
+
+            // 更新生理数据图表
+            if (bioChart && data.physio_data) {
+                const physio = data.physio_data;
+                const gsrValue = (physio.gsr_volt || 0.45) * 50;
+                const heartRate = physio.heart_rate > 0 ? Math.min(120, 60 + physio.heart_rate) : 72;
+                const spo2 = physio.spo2 > 0 ? Math.min(98, Math.max(95, 90 + physio.spo2 * 0.08)) : 98;
+                bioChart.data.datasets[0].data = [
+                    heartRate,
+                    spo2,
+                    gsrValue
+                ];
+                bioChart.update();
+            }
+
+            // 更新情绪雷达图
+            if (radarChart) {
+                const faceEmotion = data.face_emotion || '中性';
+                const voiceEmotion = data.voice_emotion || '中性';
+                const emotions = {
+                    '开心': 0, '悲伤': 0, '愤怒': 0, '恐惧': 0, '惊讶': 0, '平静': 0
+                };
+                
+                // 根据当前情绪设置值
+                if (faceEmotion in emotions) emotions[faceEmotion] += 0.5;
+                if (voiceEmotion in emotions) emotions[voiceEmotion] += 0.3;
+                if (faceEmotion === '平静' || voiceEmotion === '平静') emotions['平静'] += 0.4;
+                else emotions['平静'] += 0.2;
+                
+                radarChart.data.datasets[0].data = [
+                    emotions['开心'], emotions['悲伤'], emotions['愤怒'],
+                    emotions['恐惧'], emotions['惊讶'], emotions['平静']
+                ];
+                radarChart.update();
+            }
+
+            // 更新效价趋势
+            if (trendChart) {
+                const currentValence = emotionValues[finalEmotion] || 0.5;
+                emotionHistory.push(currentValence);
+                emotionHistory.shift();
+                trendChart.data.datasets[0].data = [...emotionHistory];
+                trendChart.update();
+            }
+
+            // 调用多模态对齐校验
+            checkPhysioAlignment(
+                data.face_emotion || '中性',
+                data.voice_emotion || '中性',
+                data.final_emotion || data.face_emotion || '中性',
+                data.physio_data
+            );
+
+            // 更新沉浸式调节卡片
+            updateImmersionCard(data);
+        }
+
+        function checkPhysioAlignment(faceEmotion, voiceEmotion, fusionEmotion, physio) {
+            const card = document.getElementById('physioCheckCard');
+            const title = document.getElementById('physioCheckTitle');
+            const desc = document.getElementById('physioCheckDesc');
+
+            if (!card || !title || !desc) return;
+
+            const emotionNormalize = (emo) => {
+                const map = {
+                    '悲伤': '伤心', '忧郁': '伤心', '难过': '伤心',
+                    '发怒': '愤怒', '恼怒': '愤怒',
+                    '恐惧': '害怕', '惊恐': '害怕',
+                    '高兴': '开心', '快乐': '开心', '愉悦': '开心',
+                    '惊讶': '惊讶', '吃惊': '惊讶',
+                    '平静': '中性', '淡定': '中性', '放松': '中性'
+                };
+                return map[emo] || emo;
+            };
+
+            const hr = physio?.heart_rate || 0;
+            const gsr = physio?.gsr_volt || 0;
+            const spo2 = physio?.spo2 || 0;
+
+            const normalizedFace = emotionNormalize(faceEmotion);
+            const normalizedVoice = emotionNormalize(voiceEmotion);
+            const normalizedFusion = emotionNormalize(fusionEmotion);
+
+            const physioInferEmotion = () => {
+                if (hr > 100 && gsr > 1.0) return '愤怒';
+                if (hr > 90 && gsr > 0.8) return '恐惧';
+                if (80 <= hr && hr <= 90 && gsr > 0.5) return '开心';
+                if (hr < 70 && gsr <= 0.5) return '中性';
+                if (60 <= hr && hr < 75 && gsr <= 0.3) return '伤心';
+                return '中性';
+            };
+
+            const physioEmo = physioInferEmotion();
+            const hasPhysioData = hr > 0 && gsr > 0;
+
+            let physioWeight = 13;
+            let faceWeight = 5;
+            let voiceWeight = 2;
+
+            if (!hasPhysioData || spo2 <= 0) {
+                physioWeight = 4;
+                faceWeight = 12;
+                voiceWeight = 4;
+            }
+
+            if (faceEmotion === '未检测到人脸' || faceEmotion === '初始化中' || faceEmotion === '摄像头异常') {
+                faceWeight = 0;
+                const total = physioWeight + voiceWeight;
+                if (total > 0) {
+                    physioWeight = Math.floor((physioWeight / total) * 18);
+                    voiceWeight = 2;
+                }
+            }
+
+            if (voiceEmotion === '中性' || voiceEmotion === 'NEUTRAL') {
+                voiceWeight = 1;
+            }
+
+            physioWeight = Math.max(physioWeight, 1);
+            faceWeight = Math.max(faceWeight, 0);
+            voiceWeight = Math.max(voiceWeight, 1);
+
+            const totalWeight = physioWeight + faceWeight + voiceWeight;
+            const physioPercent = Math.round((physioWeight / totalWeight) * 100);
+            const facePercent = Math.round((faceWeight / totalWeight) * 100);
+            const voicePercent = Math.round((voiceWeight / totalWeight) * 100);
+
+            const domEmotion = () => {
+                const votes = {};
+                votes[physioEmo] = (votes[physioEmo] || 0) + physioWeight;
+                if (faceWeight > 0) votes[normalizedFace] = (votes[normalizedFace] || 0) + faceWeight;
+                votes[normalizedVoice] = (votes[normalizedVoice] || 0) + voiceWeight;
+                return Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0];
+            };
+
+            const faceMatch = normalizedFace === normalizedFusion;
+            const voiceMatch = normalizedVoice === normalizedFusion;
+            const physioMatch = physioEmo === normalizedFusion;
+            const faceVoiceMatch = normalizedFace === normalizedVoice;
+
+            let status, statusClass, statusIcon;
+
+            if (faceEmotion === '初始化中' || faceEmotion === '未检测到人脸' || faceEmotion === '摄像头异常') {
+                title.textContent = '人脸识别' + faceEmotion;
+                desc.textContent = `权重分布：生理${physioPercent}% 面部${facePercent}% 语音${voicePercent}% | 无法进行对齐校验，请确保摄像头正常工作。`;
+                card.className = 'p-4 bg-gray-100 border-l-4 border-gray-400';
+                return;
+            }
+
+            if (faceMatch && voiceMatch && physioMatch) {
+                status = '三模态一致';
+                statusIcon = '✅';
+                statusClass = 'bg-green-50 border-l-4 border-green-500';
+                title.textContent = `情绪一致 ${statusIcon}`;
+                desc.textContent = `面部"${faceEmotion}" | 语音"${voiceEmotion}" | 生理"${physioEmo}" | 融合"${fusionEmotion}" | 三模态信号相互验证，高度可信`;
+            } else if (faceMatch && voiceMatch && !physioMatch) {
+                status = '面部语音一致';
+                statusIcon = '👍';
+                statusClass = 'bg-blue-50 border-l-4 border-blue-500';
+                title.textContent = `${status} ${statusIcon}`;
+                desc.textContent = `面部"${faceEmotion}"与语音"${voiceEmotion}"一致，生理信号"${physioEmo}"可能有偏差 | 融合结果"${fusionEmotion}"可信度高`;
+            } else if (faceMatch && !voiceMatch && physioMatch) {
+                status = '面部生理一致';
+                statusIcon = '👌';
+                statusClass = 'bg-blue-50 border-l-4 border-blue-500';
+                title.textContent = `${status} ${statusIcon}`;
+                desc.textContent = `面部"${faceEmotion}"与生理"${physioEmo}"一致，语音"${voiceEmotion}"可能有偏差 | 融合"${fusionEmotion}"可信度中`;
+            } else if (!faceMatch && voiceMatch && physioMatch) {
+                status = '语音生理一致';
+                statusIcon = '🎯';
+                statusClass = 'bg-blue-50 border-l-4 border-blue-500';
+                title.textContent = `${status} ${statusIcon}`;
+                desc.textContent = `语音"${voiceEmotion}"与生理"${physioEmo}"一致，面部"${faceEmotion}"可能有偏差 | 融合"${fusionEmotion}"可信度中`;
+            } else if (faceMatch && !voiceMatch && !physioMatch) {
+                status = '仅面部匹配';
+                statusIcon = '⚠️';
+                statusClass = 'bg-yellow-50 border-l-4 border-yellow-500';
+                title.textContent = `${status} ${statusIcon}`;
+                desc.textContent = `仅面部"${faceEmotion}"与融合一致，语音"${voiceEmotion}"与生理"${physioEmo}"不一致 | 融合"${fusionEmotion}"可信度较低，建议复核`;
+            } else if (!faceMatch && voiceMatch && !physioMatch) {
+                status = '仅语音匹配';
+                statusIcon = '⚠️';
+                statusClass = 'bg-yellow-50 border-l-4 border-yellow-500';
+                title.textContent = `${status} ${statusIcon}`;
+                desc.textContent = `仅语音"${voiceEmotion}"与融合一致，面部"${faceEmotion}"与生理"${physioEmo}"不一致 | 融合"${fusionEmotion}"可信度较低`;
+            } else if (!faceMatch && !voiceMatch && physioMatch) {
+                status = '仅生理匹配';
+                statusIcon = '⚠️';
+                statusClass = 'bg-yellow-50 border-l-4 border-yellow-500';
+                title.textContent = `${status} ${statusIcon}`;
+                desc.textContent = `仅生理"${physioEmo}"与融合一致，面部"${faceEmotion}"与语音"${voiceEmotion}"不一致 | 融合"${fusionEmotion}"可信度较低`;
+            } else {
+                status = '三模态全不一致';
+                statusIcon = '❌';
+                statusClass = 'bg-red-50 border-l-4 border-red-500';
+                title.textContent = `${status} ${statusIcon}`;
+                desc.textContent = `面部"${faceEmotion}" | 语音"${voiceEmotion}" | 生理"${physioEmo}" | 三模态信号互相矛盾，融合"${fusionEmotion}"可信度低，建议重新检测`;
+            }
+
+            desc.textContent += ` | 权重：生理${physioPercent}% 面部${facePercent}% 语音${voicePercent}% | 主导：${domEmotion()}`;
+            card.className = `p-4 ${statusClass}`;
+        }
+
+        let currentRegulation = null;
+        let regulationStartTime = null;
+
+        function evaluateState(emotion, physio) {
+            const hr = physio?.heart_rate || 0;
+            const gsr = physio?.gsr_volt || 0;
+            const spo2 = physio?.spo2 || 0;
+
+            const emotionData = {
+                '开心': { score: 1, type: 'positive', label: '愉悦' },
+                '中性': { score: 2, type: 'neutral', label: '平静' },
+                '伤心': { score: 4, type: 'negative', label: '低落' },
+                '愤怒': { score: 5, type: 'negative', label: '激动' },
+                '恐惧': { score: 5, type: 'negative', label: '紧张' },
+                '惊讶': { score: 3, type: 'neutral', label: '惊讶' },
+                '厌恶': { score: 4, type: 'negative', label: '排斥' },
+                '平静': { score: 2, type: 'neutral', label: '平和' }
+            };
+
+            const emo = emotionData[emotion] || { score: 2, type: 'neutral', label: '未知' };
+
+            let stressIndex = 0;
+            if (hr > 100) stressIndex += 3;
+            else if (hr > 85) stressIndex += 2;
+            else if (hr > 75) stressIndex += 1;
+            if (gsr > 1.0) stressIndex += 3;
+            else if (gsr > 0.7) stressIndex += 2;
+            else if (gsr > 0.4) stressIndex += 1;
+
+            return {
+                emotion: emotion,
+                emotionLabel: emo.label,
+                emotionScore: emo.score,
+                emotionType: emo.type,
+                stressLevel: stressIndex >= 5 ? 'high' : stressIndex >= 3 ? 'medium' : 'low',
+                heartRate: hr,
+                gsrLevel: gsr,
+                spo2: spo2,
+                isActive: hr > 0 || gsr > 0
+            };
+        }
+
+        function getRegulationPlan(state) {
+            const plans = {
+                'high-stress': {
+                    name: '深度放松',
+                    icon: '🧘',
+                    description: '检测到较高压力水平，建议进行深呼吸练习',
+                    duration: '5分钟',
+                    durationSeconds: 300,
+                    type: 'relaxation'
+                },
+                'anxious': {
+                    name: '平静引导',
+                    icon: '🌊',
+                    description: '心率较快，建议进行呼吸引导平复心情',
+                    duration: '3分钟',
+                    durationSeconds: 180,
+                    type: 'calming'
+                },
+                'sad': {
+                    name: '情绪提升',
+                    icon: '☀️',
+                    description: '检测到低落情绪，建议进行积极心理暗示',
+                    duration: '4分钟',
+                    durationSeconds: 240,
+                    type: 'uplifting'
+                },
+                'angry': {
+                    name: '冷静练习',
+                    icon: '❄️',
+                    description: '检测到激动情绪，建议进行冷静呼吸练习',
+                    duration: '4分钟',
+                    durationSeconds: 240,
+                    type: 'cooling'
+                },
+                'fear': {
+                    name: '放松练习',
+                    icon: '🦋',
+                    description: '检测到紧张情绪，建议进行渐进式肌肉放松',
+                    duration: '5分钟',
+                    durationSeconds: 300,
+                    type: 'relaxation'
+                },
+                'focus': {
+                    name: '心流状态',
+                    icon: '🎯',
+                    description: '状态良好，建议进行专注力训练',
+                    duration: '15分钟',
+                    durationSeconds: 900,
+                    type: 'focus'
+                },
+                'positive': {
+                    name: '愉悦保持',
+                    icon: '✨',
+                    description: '情绪积极状态，建议进行感恩练习巩固',
+                    duration: '3分钟',
+                    durationSeconds: 180,
+                    type: 'mindfulness'
+                },
+                'neutral': {
+                    name: '正念练习',
+                    icon: '🌿',
+                    description: '状态平稳，建议进行短时间正念练习',
+                    duration: '3分钟',
+                    durationSeconds: 180,
+                    type: 'mindfulness'
+                }
+            };
+
+            if (!state.isActive) {
+                return {
+                    name: '等待数据',
+                    icon: '⏳',
+                    description: '正在等待生理数据...',
+                    duration: '--',
+                    durationSeconds: 0,
+                    type: 'waiting'
+                };
+            }
+
+            if (state.emotion === '愤怒' || state.emotionType === 'negative' && state.stressLevel === 'high') {
+                return plans['angry'];
+            }
+            if (state.emotion === '恐惧' || state.emotion === '惊讶') {
+                return plans['fear'];
+            }
+            if (state.emotion === '伤心') {
+                return plans['sad'];
+            }
+            if (state.stressLevel === 'high' || state.heartRate > 100) {
+                return plans['high-stress'];
+            }
+            if (state.heartRate > 88 || state.gsrLevel > 0.6) {
+                return plans['anxious'];
+            }
+            if (state.emotion === '开心' && state.stressLevel === 'low' && state.heartRate >= 70 && state.heartRate <= 85) {
+                return plans['focus'];
+            }
+            if (state.emotionType === 'positive' && state.stressLevel === 'low') {
+                return plans['positive'];
+            }
+            return plans['neutral'];
+        }
+
+        function updateImmersionCard(data) {
+            const card = document.getElementById('immersionCard');
+            if (!card) return;
+
+            const title = card.querySelector('h3');
+            const desc = card.querySelector('p');
+            const button = card.querySelector('button');
+
+            const state = evaluateState(
+                data.final_emotion || data.face_emotion || '中性',
+                data.physio_data || {}
+            );
+
+            const plan = getRegulationPlan(state);
+
+            title.textContent = `${plan.icon} ${plan.name}`;
+            desc.textContent = `${plan.description}`;
+
+            if (currentRegulation && currentRegulation.isActive) {
+                const elapsed = Math.floor((Date.now() - regulationStartTime) / 1000);
+                const remaining = Math.max(0, currentRegulation.durationSeconds - elapsed);
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                button.textContent = `进行中 ${mins}:${secs.toString().padStart(2, '0')}`;
+                button.className = 'mt-4 w-full py-2 bg-red-500 text-sm font-bold text-white transition';
+
+                if (remaining <= 0) {
+                    stopRegulation();
+                    title.textContent = `✅ ${plan.name} 完成`;
+                    desc.textContent = '调节已完成，感谢使用！';
+                }
+            } else {
+                button.textContent = `启动 ${plan.name}`;
+                button.className = 'mt-4 w-full py-2 bg-indigo-600 text-sm font-bold text-white transition group-hover:scale-[1.02]';
+            }
+
+            button.onclick = () => {
+                if (currentRegulation && currentRegulation.isActive) {
+                    stopRegulation();
+                } else {
+                    startRegulation(plan);
+                }
+            };
+        }
+
+        function startRegulation(plan) {
+            currentRegulation = { ...plan, isActive: true };
+            regulationStartTime = Date.now();
+
+            const card = document.getElementById('immersionCard');
+            const title = card.querySelector('h3');
+            const desc = card.querySelector('p');
+
+            title.textContent = `🔄 ${plan.name}`;
+            desc.textContent = `调节进行中，请保持放松...`;
+
+            console.log(`[沉浸式调节] 启动: ${plan.name} - ${plan.description}`);
+        }
+
+        function stopRegulation() {
+            if (currentRegulation) {
+                console.log(`[沉浸式调节] 停止: ${currentRegulation.name}`);
+            }
+            currentRegulation = null;
+            regulationStartTime = null;
+        }
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(fetchStatus, 100); // 100ms刷新一次
+        }
+
+        function stopAutoRefresh() {
+            clearInterval(refreshInterval);
+        }
+
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>

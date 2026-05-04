@@ -121,7 +121,7 @@ def real_time_logger(dat_file_path, save_txt_path):
 
 if __name__ == '__main__':
     # ===================== 仅修改这两个路径 =====================
-    DAT_FILE = r"D:\AI_project\Facial-and-Speech-Dual-Modal-Emotion-Sensing-and-Regulation-System-master\Facial_Voice_Sense\sscom\ReceivedTofile-COM3-2026_4_20_22-19-30.DAT"  # 串口实时写入的文件
+    DAT_FILE = r"D:\AI_project\Facial-and-Speech-Dual-Modal-Emotion-Sensing-and-Regulation-System-master\Facial_Voice_Sense\sscom\ReceivedTofile-COM3-2026_5_3_14-28-49.DAT"  # 串口实时写入的文件
     SAVE_TXT = r"D:\AI_project\\Facial-and-Speech-Dual-Modal-Emotion-Sensing-and-Regulation-System-master\Facial_Voice_Sense\sscom\手环实时解析结果.txt" # 计算结果保存的TXT
     # ============================================================
 
