@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三模态情绪识别系统 - 新版仪表板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ===== 侧边栏 ===== */
+        .sidebar {
+            width: 256px;
+            background: #1a2942;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px 16px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            left: 0;
+            top: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .logo-text p {
+            font-size: 12px;
+            color: #a0a0a0;
+        }
+
+        .nav-section {
+            margin-bottom: 24px;
+        }
+
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .nav-item:hover {
+            background: rgba(42, 82, 152, 0.5);
+        }
+
+        .nav-item.active {
+            background: #2a5298;
+            color: #fff;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .label-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .label-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .label-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .sidebar-bottom {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-btn.logout {
+            color: #f5576c;
+        }
+
+        /* ===== 顶部导航 ===== */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 256px;
+            right: 0;
+            height: 64px;
+            background: linear-gradient(to right, #2a5298, #1e90ff);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 100;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 16px 8px 36px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-box input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* ===== 主内容区 ===== */
+        .main-content {
+            margin-left: 256px;
+            margin-top: 64px;
+            padding: 32px;
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: #a0a0a0;
+            font-size: 16px;
+        }
+
+        /* ===== 指标卡片 ===== */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .metric-icon.purple {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .metric-icon.pink {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .metric-icon.cyan {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .metric-icon.green {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .metric-change {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(67, 233, 123, 0.2);
+            color: #43e97b;
+        }
+
+        .metric-label {
+            color: #a0a0a0;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .metric-footer {
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 11px;
+            color: #a0a0a0;
+        }
+
+        /* ===== 图表区域 ===== */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .chart-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .chart-header button {
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-size: 18px;
+            transition: color 0.3s;
+        }
+
+        .chart-header button:hover {
+            color: #fff;
+        }
+
+        /* ===== 数据表格 ===== */
+        .table-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .table-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #a0a0a0;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* ===== 底部统计 ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-content h4 {
+            font-size: 12px;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            color: #43e97b;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .header {
+                left: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+                padding: 16px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header h1 {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .sidebar {
+                width: 0;
+                transform: translateX(-100%);
+            }
+
+            .header {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">🧠</div>
+                <div class="logo-text">
+                    <h1>情绪识别</h1>
+                    <p>Multi-Modal</p>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">主导航</div>
+                <a href="#" class="nav-item active">
+                    <span>🏠</span>
+                    <span>仪表盘</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span>🧠</span>
+                    <span>面部情绪</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span>🎤</span>
+                    <span>语音情绪</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span>⚡</span>
+                    <span>生理数据</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span>📊</span>
+                    <span>数据分析</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <span>👥</span>
+                    <span>用户管理</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">标签</div>
+                <div class="label-item">
+                    <div class="label-dot" style="background: #ff6b6b;"></div>
+                    <span>重要</span>
+                </div>
+                <div class="label-item">
+                    <div class="label-dot" style="background: #ffc107;"></div>
+                    <span>警告</span>
+                </div>
+                <div class="label-item">
+                    <div class="label-dot" style="background: #74b9ff;"></div>
+                    <span>信息</span>
+                </div>
+            </div>
+
+            <div class="sidebar-bottom">
+                <button class="sidebar-btn">⚙️ 设置</button>
+                <button class="sidebar-btn logout">🚪 登出</button>
+            </div>
+        </aside>
+
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" placeholder="搜索...">
+            </div>
+
+            <div class="header-actions">
+                <button class="header-btn">🔔</button>
+                <button class="header-btn">💬</button>
+                <div class="user-avatar">👤</div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1>仪表盘</h1>
+                <p>欢迎回来！这是您的三模态情绪识别系统概览。</p>
+            </div>
+
+            <!-- 指标卡片 -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon purple">🧠</div>
+                        <div class="metric-change">↑ +4.2%</div>
+                    </div>
+                    <div class="metric-label">面部情绪识别</div>
+                    <div class="metric-value">9,526</div>
+                    <div class="metric-footer">较上周同比增长</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon pink">🎤</div>
+                        <div class="metric-change">↑ +1.2%</div>
+                    </div>
+                    <div class="metric-label">语音情绪识别</div>
+                    <div class="metric-value">8,323</div>
+                    <div class="metric-footer">较上周同比增长</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon cyan">⚡</div>
+                        <div class="metric-change">↑ +5.2%</div>
+                    </div>
+                    <div class="metric-label">生理信号采集</div>
+                    <div class="metric-value">6,200</div>
+                    <div class="metric-footer">较上周同比增长</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon green">💬</div>
+                        <div class="metric-change">↑ +2.2%</div>
+                    </div>
+                    <div class="metric-label">融合情绪结果</div>
+                    <div class="metric-value">5,630</div>
+                    <div class="metric-footer">较上周同比增长</div>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>情绪识别趋势</h3>
+                        <button>⋯</button>
+                    </div>
+                    <canvas id="trendChart"></canvas>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>每周销售分布</h3>
+                        <button>⋯</button>
+                    </div>
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h3>近期识别记录</h3>
+                    <button style="background: none; border: none; color: #a0a0a0; cursor: pointer; font-size: 18px;">⋯</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>产品</th>
+                            <th>照片</th>
+                            <th>产品 ID</th>
+                            <th>金额</th>
+                            <th>日期</th>
+                            <th>航运</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>iPhone 5</td>
+                            <td>📷</td>
+                            <td>#9405822</td>
+                            <td>$1,250.00</td>
+                            <td>2024-08-03</td>
+                            <td>已发货</td>
+                        </tr>
+                        <tr>
+                            <td>耳机 GL</td>
+                            <td>📷</td>
+                            <td>#9405820</td>
+                            <td>$1,500.00</td>
+                            <td>2024-08-03</td>
+                            <td>已发货</td>
+                        </tr>
+                        <tr>
+                            <td>高清手持相机</td>
+                            <td>📷</td>
+                            <td>#9405830</td>
+                            <td>$1,400.00</td>
+                            <td>2024-08-03</td>
+                            <td>已发货</td>
+                        </tr>
+                        <tr>
+                            <td>经典鞋</td>
+                            <td>📷</td>
+                            <td>#9405825</td>
+                            <td>$1,200.00</td>
+                            <td>2024-08-03</td>
+                            <td>已发货</td>
+                        </tr>
+                        <tr>
+                            <td>手表</td>
+                            <td>📷</td>
+                            <td>#9405840</td>
+                            <td>$1,800.00</td>
+                            <td>2024-08-03</td>
+                            <td>已发货</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 底部统计 -->
+            <div style="margin-top: 32px;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <h4>总访客</h4>
+                            <div class="stat-value">45.87M</div>
+                            <div class="stat-change">↑ 2.43%</div>
+                        </div>
+                        <div class="stat-icon">📈</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <h4>访客时长</h4>
+                            <div class="stat-value">15:48</div>
+                            <div class="stat-change">↑ 12.65%</div>
+                        </div>
+                        <div class="stat-icon">⏱️</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-content">
+                            <h4>页面访问</h4>
+                            <div class="stat-value">245.65</div>
+                            <div class="stat-change">↑ 5.62%</div>
+                        </div>
+                        <div class="stat-icon">📊</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 趋势图表
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月'],
+                datasets: [
+                    {
+                        label: '新访客',
+                        data: [4, 6, 8, 7, 9, 11, 10, 12, 14, 13],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                    },
+                    {
+                        label: '老访客',
+                        data: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                        borderColor: '#f5576c',
+                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { color: '#a0a0a0' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#a0a0a0' }
+                    },
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#a0a0a0' }
+                    }
+                }
+            }
+        });
+
+        // 饼图
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['直接', '附属台', '电子邮件', '其他'],
+                datasets: [{
+                    data: [5856, 2602, 1802, 1105],
+                    backgroundColor: [
+                        '#667eea',
+                        '#f5576c',
+                        '#4facfe',
+                        '#43e97b'
+                    ],
+                    borderColor: '#1e3c72',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { color: '#a0a0a0' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
